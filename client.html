@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+
+  <title>MY WS TEST</title>
+</head>
+<body>
+  <div id="msgSend">
+    <input type="number" min="1" max="99" step="1" value="7" id="toSend">
+  </div>
+  
+  <br><hr><br>
+
+  <div id="control">
+    <button type="button" id="start">connect</button>
+    <button type="button" id="sendNu" style="display:none;">send number</button>
+    <button type="button" id="end" style="display:none;">end connection</button>
+  </div>
+
+  <br><hr><br>
+
+  <div id="msgRecieve"></div>
+
+  <script>
+    var connection;
+    var url = 'ws://127.0.0.1:8080/wsTest/server.php';
+    
+    var clientName = makeRandomString(8);
+    
+    document.getElementById('start').addEventListener('click', function() {
+      document.getElementById('msgRecieve').innerHTML = '';
+
+      connection = new WebSocket(url);
+
+      connection.onopen = function () {
+        logMe('Connection established');
+        var s = {
+        	number: 1,
+        	name: clientName,
+        }
+        connection.send(JSON.stringify(s));
+      };
+
+      connection.onerror = function (error) {
+        logMe('WebSocket Error ' + error.type);
+        logMe(error);
+      };
+      
+      connection.onmessage = function (e) {
+        logMe('Server: ' + e.data);
+      };
+
+      connection.onclose = function() {
+      	logMe('Connection terminated');
+      	var s = {
+      		number: 0,
+      		name: clientName,
+      	}
+        connection.send(JSON.stringify(s));
+      }
+
+      document.getElementById('start').style.display = 'none';
+      document.getElementById('sendNu').style.display = 'block';
+      document.getElementById('end').style.display = 'block';
+    });
+
+    document.getElementById('sendNu').addEventListener('click', function() {
+      var v = document.getElementById('toSend').value;
+
+      var s = {
+      	number: v,
+      	name: clientName,
+      };
+
+      connection.send(JSON.stringify(s));
+    });
+
+    document.getElementById('end').addEventListener('click', function() {
+      connection.close();
+      connection = null;
+      logMe('Connection closed');
+
+      document.getElementById('start').style.display = 'block';
+      document.getElementById('sendNu').style.display = 'none';
+      document.getElementById('end').style.display = 'none';
+      logMe('');
+    });
+
+    function logMe(string) {
+      document.getElementById('msgRecieve').innerHTML += "<br>" + string
+    }
+
+    function makeRandomString(l) {
+    	var text = "";
+    	var possible = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+
+    	for (var i = 0; i < l; i++)
+    		text += possible.charAt(Math.floor(Math.random() * possible.length));
+    	return text;
+    }
+    
+  </script>
+</body>
